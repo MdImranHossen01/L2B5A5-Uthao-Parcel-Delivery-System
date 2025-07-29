@@ -18,7 +18,11 @@ const userSchema = new Schema<IUser>({
         enum: Object.values(Role),
         default: Role.USER
     },
-    phone: { type: String },
+    phone: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     picture: { type: String },
     address: { type: String },
     isDeleted: { type: Boolean, default: false },
