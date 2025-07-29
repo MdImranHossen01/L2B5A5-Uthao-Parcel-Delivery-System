@@ -1,94 +1,79 @@
-import {Sever} from 'http';
-import mongoose from 'mongoose';
-import app from './app';
-import {envVars} from "./app/config/env";
+/* eslint-disable no-console */
+import { Server } from "http";
+import mongoose from "mongoose";
+import app from "./app";
+import { envVars } from "./app/config/env";
+import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 
-let server: Sever;
+let server: Server;
+
 
 const startServer = async () => {
     try {
-        // Connect to MongoDB
         await mongoose.connect(envVars.DB_URL)
-        console.log('Connected to MongoDB');
 
-        // Start the server
+        console.log("Connected to DB!!");
+
         server = app.listen(envVars.PORT, () => {
-            console.log(`Server is running on port ${envVars.PORT}`);
+            console.log(`Server is listening to port ${envVars.PORT}`);
         });
     } catch (error) {
-        console.error('Error starting the server:', error);
-        process.exit(1);
+        console.log(error);
     }
-};
+}
 
-startServer();
+(async () => {
+    await startServer()
+    await seedSuperAdmin()
+})()
 
-// Handle graceful shutdown
-process.on('SIGINT', () => {
+process.on("SIGTERM", () => {
+    console.log("SIGTERM signal recieved... Server shutting down..");
+
     if (server) {
         server.close(() => {
-            console.log('Server closed');
-            mongoose.connection.close(() => {
-                console.log('MongoDB connection closed');
-                process.exit(0);
-            });
-        });
-    } else {
-        mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
-            process.exit(0);
+            process.exit(1)
         });
     }
-}); 
 
-process.on('SIGTERM', () => {
-    if (server) {
-        server.close(() => {
-            console.log('Server closed');
-            mongoose.connection.close(() => {
-                console.log('MongoDB connection closed');
-                process.exit(0);
-            });
-        });
-    } else {
-        mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
-            process.exit(0);
-        });
-    }
-}); 
+    process.exit(1)
+})
 
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+process.on("SIGINT", () => {
+    console.log("SIGINT signal recieved... Server shutting down..");
+
     if (server) {
         server.close(() => {
-            console.log('Server closed due to uncaught exception');
-            mongoose.connection.close(() => {
-                console.log('MongoDB connection closed');
-                process.exit(1);
-            });
-        });
-    } else {
-        mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
-            process.exit(1);
+            process.exit(1)
         });
     }
-});
-process.on('unhandledRejection', (error) => {
-    console.error('Unhandled Rejection:', error);
+
+    process.exit(1)
+})
+
+
+process.on("unhandledRejection", (err) => {
+    console.log("Unhandled Rejection detected... Server shutting down..", err);
+
     if (server) {
         server.close(() => {
-            console.log('Server closed due to unhandled rejection');
-            mongoose.connection.close(() => {
-                console.log('MongoDB connection closed');
-                process.exit(1);
-            });
-        });
-    } else {
-        mongoose.connection.close(() => {
-            console.log('MongoDB connection closed');
-            process.exit(1);
+            process.exit(1)
         });
     }
-}); 
+
+    process.exit(1)
+})
+
+process.on("uncaughtException", (err) => {
+    console.log("Uncaught Exception detected... Server shutting down..", err);
+
+    if (server) {
+        server.close(() => {
+            process.exit(1)
+        });
+    }
+
+    process.exit(1)
+})
+
+
